@@ -1,7 +1,6 @@
 __pycache__
 .st_cache
 .vscode
-config
 model_cache
 old
 out

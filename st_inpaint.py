@@ -14,17 +14,26 @@ def random_filename():
 
 st.set_page_config(page_title="Inpaint", layout="wide")
 
-# Load Config
-@st.cache
-def InitSetting(config_filepath):
+# Sidebar
+## Server
+def LoadConfig(config_filepath):
 	with open(config_filepath, mode="r", encoding="utf8") as f:
 		configs = json.load(f)
 	config = configs[0]
 	return config
-config_filepath = r".\config\inpaint.json"
-config = InitSetting(config_filepath)
+st.session_state.setdefault("config", LoadConfig(r".\config\inpaint.json"))
+with st.sidebar.expander("Server", expanded=False):
+	config_filepath = st.text_input("config_filepath", value=r".\config\inpaint.json",
+		help="The config file's path on server.")
+	do_load_config = st.button("Load Config")
+	if do_load_config:
+		st.session_state["config"] = LoadConfig(config_filepath)
+		st.info("Config loaded.")
 
-# Sidebar
+	out_dir = st.text_input("out_dir", value="./out/progress", 
+		help="The directory address on server to save selected pictures.") 
+config = st.session_state["config"]
+
 ## Input
 with st.sidebar.expander("Input", expanded=True):
 	clear_canvas = st.button("clear_canvas")
@@ -49,6 +58,8 @@ with st.sidebar.expander("Tool", expanded=True):
 		help="White: mask this.  Black: unmask this.  Only the masked part will be inpainted.")
 	col_per_row = st.number_input("col_per_row", min_value=1, value=3, step=1, format="%i", key="col_per_row",
 		help="How many pictures are shown in the result row?")
+	save_metadata = st.checkbox("save_metadata", value=True,
+		help="If True, a json file containing the config when generating the image will be saved, with .meta.json extension.")
 
 ## Inpaint Settings
 @st.experimental_singleton
@@ -232,9 +243,9 @@ for i in range(len(sel_btns)):
 	if sel_btns[i]:
 		img = res_images[i]
 
-		# Output directory
+		# Save concerned common
 		import os.path
-		out_dir = "./out/progress"
+		filename:str = random_filename()
 
 		# Save metadata
 		## Build metadata
@@ -250,12 +261,12 @@ for i in range(len(sel_btns)):
 		}
 
 		## Save metadata
-		filename:str = random_filename()
-		metadata_file = os.path.join(out_dir, filename+".meta.txt")
-		st.text("Save metadata_file: " + metadata_file)
-		print("Save metadata_file: " + metadata_file)
-		with open(metadata_file, mode="w") as f:
-			json.dump(metadata, f, indent=4)
+		if save_metadata:
+			metadata_file = os.path.join(out_dir, filename+".meta.json")
+			st.text("Save metadata_file: " + metadata_file)
+			print("Save metadata_file: " + metadata_file)
+			with open(metadata_file, mode="w") as f:
+				json.dump(metadata, f, indent=4)
 
 		# Save Image
 		## Gen filename

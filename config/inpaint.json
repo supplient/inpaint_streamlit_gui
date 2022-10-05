@@ -1,0 +1,15 @@
+[
+    {
+        "seed": null,
+        "n": 3,
+        "height": 640,
+        "width": 384,
+        "keep_origin": true,
+        "strength": 0.4,
+        "num_inference_steps": 30,
+        "guidance_scale": 9.5,
+        "eta": 0.0,
+        "name": null,
+        "prompt": "cute bishojo pink lolita white glowing skin jewelry eyes elegant eyelashes violet eyeshadow blush cheeks silky silver hair shy pure cute holy lace dress thighhighs black iris thighs shoulders beauty legs anime detailed fantasitic CG wallpaper translucent moonlight sweet loli beautiful princess lovely maiden , granblue fantasy , by Justin Gerard , by Canon EOS SIGMA Art Lens"
+    }
+]
