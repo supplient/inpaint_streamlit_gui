@@ -1,18 +1,22 @@
-from io import BytesIO
-import torch
-from PIL.PngImagePlugin import PngInfo
+import streamlit as st
+from streamlit_drawable_canvas import st_canvas
 import json
 import hashlib
 from PIL import Image
-import streamlit as st
-from streamlit_drawable_canvas import st_canvas
+from PIL.PngImagePlugin import PngInfo
+from io import BytesIO
+from random_filename import random_filename
 
-
-def random_filename():
-	import uuid
-	return str(uuid.uuid4())
-
+# Gloabl Page Config
 st.set_page_config(page_title="Inpaint", layout="wide")
+
+# A place to information
+info_bar = st.empty()
+
+# Long time import
+info_bar.info("Loading pytorch...")
+import torch
+info_bar.empty()
 
 # Sidebar
 ## Server
@@ -94,7 +98,9 @@ with st.sidebar.expander("Inpaint", expanded=True):
 		help="0 means to use random seed.")
 
 
+
 # Work area
+## get init_image
 upload_image = st.session_state.get("upload_image", default=None)
 sel_image = st.session_state.get("sel_image", default=None)
 
@@ -104,6 +110,7 @@ if sel_image:
 elif upload_image:
 	init_image = Image.open(upload_image)
 
+## get init_mask_json
 if init_mask_json is None:
 	init_mask_json = {}
 else:
@@ -113,6 +120,7 @@ else:
 ## see https://github.com/andfanilo/streamlit-drawable-canvas/issues/73
 init_image_hash = hashlib.sha256(init_image.tobytes()).hexdigest() if init_image else "sadjfiojeio"
 
+## canvas to draw the mesh
 canvas_result = st_canvas(
     fill_color="rgba(0, 0, 0, 0)",  # Fixed fill color with some opacity
     stroke_width=stroke_width,
@@ -128,18 +136,22 @@ canvas_result = st_canvas(
     key="canvas" + init_image_hash,
 )
 
+## Convert mask_image to PIL.Image with mode of 'RGB'
 mask_image = None
 if not canvas_result.image_data is None:
 	mask_image = canvas_result.image_data
 	mask_image = Image.fromarray(mask_image, mode="RGBA")
 	mask_image = mask_image.convert("RGB")
 
+## Buttons to inpaint and download
 work_btn_cols = st.columns(4)
 with work_btn_cols[0]:
 	do_inpaint = st.button(
 		label="Inpaint",
 	)
 with work_btn_cols[1]:
+	# we have to convert PIL.Image to BytesIO for downloading.
+	# see https://discuss.streamlit.io/t/how-to-download-image/3358/10
 	init_image_buf_im = ""
 	if init_image:
 		init_image_buf = BytesIO()
@@ -182,9 +194,7 @@ with work_btn_cols[3]:
 def GetPipe():
 	from pipes.get_pipe import pipe
 	return pipe
-
 import pipes.inpaint
-
 
 if do_inpaint:
 	# Set Seed
@@ -195,9 +205,11 @@ if do_inpaint:
 	else:
 		cuda_seed = cuda_seed.manual_seed(manual_seed)
 
+	# Set mask to all white if all_mask is True
 	if all_mask:
 		mask_image = Image.new(mode="RGB", size=init_image.size, color=(255, 255, 255))
 
+	# Evaluate
 	st.session_state["res_images"] = []
 	with st.spinner(f"Inpainting... (seed:{seed})"):
 		prog_bar = st.progress(0)
@@ -215,6 +227,7 @@ if do_inpaint:
 				generator=cuda_seed,
 			))
 			prog_bar.progress((i+1)/n)
+		# Rerun to remove the progress bar
 		st.experimental_rerun()
 
 
@@ -235,7 +248,6 @@ if len(res_images) > 0:
 			col.image(res_images[img_index], use_column_width="never")
 			sel_btns[img_index] = col.button("Select", key=f"sel_btn_{img_index}")
 			img_index += 1
-
 
 
 # Save & Select
