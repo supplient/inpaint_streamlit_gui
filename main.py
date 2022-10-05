@@ -1,7 +1,12 @@
 import json
-import torch
 import PIL
 from PIL.PngImagePlugin import PngInfo
+
+print("Loading pytorch...")
+import torch
+
+print("Loading pipe...")
+from pipes.get_pipe import pipe
 
 
 def random_filename():
@@ -100,7 +105,7 @@ while True:
 	####################################
 	# txt2img
 	if sel_mode == "0":
-		import txt2img
+		import pipes.txt2img as txt2img
 		pipe_func = txt2img.predict
 	# inpaint
 	elif sel_mode == "1":
@@ -110,14 +115,14 @@ while True:
 		mask_image, last_inpaint_mask_image_path = get_image_from_user("mask image", last_inpaint_mask_image_path)
 		kwargs["mask_image"] = mask_image
 
-		import inpaint
+		import pipes.inpaint as inpaint
 		pipe_func = inpaint.predict
 	# img2img
 	elif sel_mode == "2":
 		init_image, last_img2img_init_image_path = get_image_from_user("init image", last_img2img_init_image_path)
 		kwargs["init_image"] = init_image
 
-		import img2img
+		import pipes.img2img as img2img
 		pipe_func = img2img.predict
 
 
@@ -148,6 +153,7 @@ while True:
 		for key in ["prompt", "height", "width", "keep_origin", "strength", "num_inference_steps", "guidance_scale", "eta"]:
 			if key in config.keys():
 				kwargs[key] = config[key]
+		kwargs["pipe"] = pipe
 		kwargs["generator"] = cuda_seed
 
 

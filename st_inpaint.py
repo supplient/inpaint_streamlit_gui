@@ -146,10 +146,11 @@ with work_btn_cols[2]:
 
 # Inpaint
 @st.experimental_singleton
-def get_pipe_func():
-	import inpaint
-	return inpaint.predict
+def GetPipe():
+	from pipes.get_pipe import pipe
+	return pipe
 
+import pipes.inpaint
 
 
 if do_inpaint:
@@ -168,7 +169,8 @@ if do_inpaint:
 	with st.spinner(f"Inpainting... (seed:{seed})"):
 		prog_bar = st.progress(0)
 		for i in range(n):
-			st.session_state["res_images"].append(get_pipe_func()(
+			st.session_state["res_images"].append(pipes.inpaint.predict(
+				pipe=GetPipe(),
 				prompt=prompt,
 				init_image=init_image,
 				mask_image=mask_image,

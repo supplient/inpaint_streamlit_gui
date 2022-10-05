@@ -1,22 +1,18 @@
 import torch
 import PIL
-from diffusers import StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionImg2ImgPipeline
 
 
 ####################################
 # Interface for predicting
 ####################################
-def predict(prompt: str, init_image: PIL.Image, mask_image: PIL.Image, keep_origin: bool, strength: float, num_inference_steps: int, guidance_scale: float, eta: float, generator: torch.Generator, **kwargs) -> PIL.Image:
+def predict(pipe, prompt: str, init_image: PIL.Image, strength: float, num_inference_steps: int, guidance_scale: float, eta: float, generator: torch.Generator, **kwargs) -> PIL.Image:
 	''' Args (copied from StableDiffusionInpaintPipeline.__call__):
 		prompt (`str` or `List[str]`):
 			The prompt or prompts to guide the image generation.
 		init_image (`torch.FloatTensor` or `PIL.Image.Image`):
 			`Image`, or tensor representing an image batch, that will be used as the starting point for the
 			process. This is the image whose masked region will be inpainted.
-		mask_image (`torch.FloatTensor` or `PIL.Image.Image`):
-			`Image`, or tensor representing an image batch, to mask `init_image`. White pixels in the mask will be
-			replaced by noise and therefore repainted, while black pixels will be preserved. The mask image will be
-			converted to a single channel (luminance) before use.
 		strength (`float`, *optional*, defaults to 0.8):
 			Conceptually, indicates how much to inpaint the masked area. Must be between 0 and 1. When `strength`
 			is 1, the denoising process will be run on the masked area for the full number of iterations specified
@@ -44,27 +40,19 @@ def predict(prompt: str, init_image: PIL.Image, mask_image: PIL.Image, keep_orig
 			Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
 			plain tuple.
 	'''
-	from get_pipe import pipe
-	pipe.__class__ = StableDiffusionInpaintPipeline
+	pipe.__class__ = StableDiffusionImg2ImgPipeline
 
 	with torch.autocast("cuda"):
 		image = pipe(
 			prompt, 
 			init_image,
-			mask_image,
 			strength=strength,
 			num_inference_steps=num_inference_steps, 
 			guidance_scale=guidance_scale, 
 			eta=eta, 
 			generator=generator,
 		)["images"][0]
-	if keep_origin:
-		L_mask_image = mask_image.convert("1")
-		res_image = init_image.copy()
-		res_image.paste(image, None, L_mask_image)
-		return res_image
-	else:
-		return image
+	return image
 
 
 
