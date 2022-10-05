@@ -1,5 +1,5 @@
 __pycache__
-.st_cache
+.streamlit
 .vscode
 model_cache
 old
