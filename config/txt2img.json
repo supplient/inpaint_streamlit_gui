@@ -45,7 +45,7 @@
         "height": 640,
         "width": 384,
         "keep_origin": true,
-        "strength": 0.8,
+        "strength": 0.4,
         "num_inference_steps": 10,
         "guidance_scale": 5.5,
         "eta": 0.0,

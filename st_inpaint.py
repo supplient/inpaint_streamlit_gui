@@ -7,7 +7,7 @@ import os.path
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
-from shared import random_filename, load_config, get_check_prompt_func
+from shared import random_filename, load_config, make_prompt_area, make_image_download_btn
 import torch
 
 def render():
@@ -21,8 +21,13 @@ def render():
 			st.session_state["config"] = load_config(config_filepath)
 			st.info("Config loaded.")
 
-		st.session_state["out_dir"] = st.text_input("out_dir", value="./out/progress", key="out_dir_input",
+		st.session_state["out_dir"] = st.text_input("out_dir", value="./out", key="out_dir_input",
 			help="The directory address on server to save selected pictures.") 
+		save_on_select_server = st.checkbox("save_on_select_server", value=False,
+			help="If True, image will be saved in `out_dir` when `Select` button is pressed.")
+		if save_on_select_server:
+			save_metadata_server = st.checkbox("save_metadata_server", value=True,
+				help="If True, a json file containing the config when generating the image will be saved, with .meta.json extension.")
 	config = st.session_state["config"]
 	out_dir = st.session_state["out_dir"]
 	pipe = st.session_state["pipe"]
@@ -51,21 +56,11 @@ def render():
 			help="White: mask this.  Black: unmask this.  Only the masked part will be inpainted.")
 		col_per_row = st.number_input("col_per_row", min_value=1, value=3, step=1, format="%i", key="col_per_row",
 			help="How many pictures are shown in the result row?")
-		save_metadata = st.checkbox("save_metadata", value=True,
-			help="If True, a json file containing the config when generating the image will be saved, with .meta.json extension.")
+		save_on_select = st.checkbox("save_on_select", value=True,
+			help="If True, image will be saved upon `Select` is pressed.")
 
 	## Inpaint Settings
 	with st.sidebar.expander("Inpaint", expanded=True):
-		### Prompt Setting
-		prompt = st.text_area("prompt", value=config["prompt"], key="prompt",
-			help="Prompt to guide AI.")
-		isvalid, prompt_len, max_prompt_len = get_check_prompt_func()(prompt)
-		if isvalid:
-			st.success(f"Prompt has {prompt_len} tokens <= {max_prompt_len}.")
-		else:
-			st.warning(f"Prompt has {prompt_len} tokens > {max_prompt_len}!!!")
-
-		### Other Settings
 		n = st.number_input("n", min_value=1, value=config["n"], step=1, format="%i", key="n",
 			help="How many pictures to generate?")
 		if all_mask:
@@ -84,6 +79,9 @@ def render():
 
 
 	# Work area
+	## Prompt
+	prompt = make_prompt_area(config["prompt"])
+
 	## get init_image
 	upload_image = st.session_state.get("upload_image", default=None)
 	sel_image = st.session_state.get("sel_image", default=None)
@@ -134,33 +132,9 @@ def render():
 			label="Inpaint",
 		)
 	with work_btn_cols[1]:
-		# we have to convert PIL.Image to BytesIO for downloading.
-		# see https://discuss.streamlit.io/t/how-to-download-image/3358/10
-		init_image_buf_im = ""
-		if init_image:
-			init_image_buf = BytesIO()
-			init_image.save(init_image_buf, format="png")
-			init_image_buf_im = init_image_buf.getvalue()
-		st.download_button(
-			label="Download bg",
-			data=init_image_buf_im,
-			file_name=random_filename()+".png",
-			mime="image/png",
-			disabled=init_image is None,
-		)
+		make_image_download_btn(init_image, "Download bg", random_filename()+".png")
 	with work_btn_cols[2]:
-		mask_image_buf_im = ""
-		if mask_image:
-			mask_image_buf = BytesIO()
-			mask_image.save(mask_image_buf, format="png")
-			mask_image_buf_im = mask_image_buf.getvalue()
-		st.download_button(
-			label="Download mask image",
-			data=mask_image_buf_im,
-			file_name=random_filename()+".mask.png",
-			mime="image/png",
-			disabled=mask_image is None,
-		)
+		make_image_download_btn(mask_image, "Download mask image", random_filename()+".png")
 	with work_btn_cols[3]:
 		json_str = json.dumps(canvas_result.json_data) if canvas_result.json_data else ""
 		st.download_button(
@@ -225,9 +199,14 @@ def render():
 			col_number -= len(cols)
 
 			for col in cols:
-				col.image(res_images[img_index], use_column_width="never")
-				sel_btns[img_index] = col.button("Select", key=f"sel_btn_{img_index}")
-				img_index += 1
+				image = res_images[img_index]
+				with col:
+					st.image(image, use_column_width="never")
+					if save_on_select:
+						sel_btns[img_index] = make_image_download_btn(image, "Select", f"{random_filename()}.png")
+					else:
+						sel_btns[img_index] = st.button("Select", key=f"sel_btn_{img_index}")
+					img_index += 1
 
 
 	# Save & Select
@@ -235,42 +214,43 @@ def render():
 		if sel_btns[i]:
 			img = res_images[i]
 
-			# Save concerned common
-			filename:str = random_filename()
+			if save_on_select_server:
+				# Save concerned common
+				filename:str = random_filename()
 
-			# Save metadata
-			## Build metadata
-			metadata = {
-				"n": n,
-				"prompt": prompt,
-				"keep_origin": keep_origin,
-				"strength": strength,
-				"num_inference_steps": num_inference_steps,
-				"guidance_scale": guidance_scale,
-				"eta": eta,
-				"seed": seed,
-			}
+				# Save metadata
+				## Build metadata
+				metadata = {
+					"n": n,
+					"prompt": prompt,
+					"keep_origin": keep_origin,
+					"strength": strength,
+					"num_inference_steps": num_inference_steps,
+					"guidance_scale": guidance_scale,
+					"eta": eta,
+					"seed": seed,
+				}
 
-			## Save metadata
-			if save_metadata:
-				metadata_file = os.path.join(out_dir, filename+".meta.json")
-				st.text("Save metadata_file: " + metadata_file)
-				print("Save metadata_file: " + metadata_file)
-				with open(metadata_file, mode="w") as f:
-					json.dump(metadata, f, indent=4)
+				## Save metadata
+				if save_metadata_server:
+					metadata_file = os.path.join(out_dir, filename+".meta.json")
+					st.text("Save metadata_file: " + metadata_file)
+					print("Save metadata_file: " + metadata_file)
+					with open(metadata_file, mode="w") as f:
+						json.dump(metadata, f, indent=4)
 
-			# Save Image
-			## Gen filename
-			filepath = os.path.join(out_dir, filename+".png")
+				# Save Image
+				## Gen filename
+				filepath = os.path.join(out_dir, filename+".png")
 
-			## Build Png Metadata
-			png_metadata = PngInfo()
-			png_metadata.add_text("stable diffusion", json.dumps(metadata))
-			
-			## Save selected image
-			st.text(f"Save image {filepath}")
-			print(f"Save image {filepath}")
-			img.save(filepath, pnginfo=png_metadata)
+				## Build Png Metadata
+				png_metadata = PngInfo()
+				png_metadata.add_text("stable diffusion", json.dumps(metadata))
+				
+				## Save selected image
+				st.text(f"Save image {filepath}")
+				print(f"Save image {filepath}")
+				img.save(filepath, pnginfo=png_metadata)
 
 			# Select
 			st.session_state["sel_image"] = img

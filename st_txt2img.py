@@ -8,7 +8,7 @@ import os.path
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
-from shared import load_config, random_filename, get_check_prompt_func
+from shared import load_config, make_prompt_area, random_filename
 import torch
 
 
@@ -34,18 +34,8 @@ def render():
 		show_result = st.checkbox("show_result", value=False,
 			help="If True, all generated images will shown.")
 
-	## Inpaint Settings
+	## txt2img Settings
 	with st.sidebar.expander("Inpaint", expanded=True):
-		### Prompt Setting
-		prompt = st.text_area("prompt", value=config["prompt"], key="prompt",
-			help="Prompt to guide AI.")
-		isvalid, prompt_len, max_prompt_len = get_check_prompt_func()(prompt)
-		if isvalid:
-			st.success(f"Prompt has {prompt_len} tokens <= {max_prompt_len}.")
-		else:
-			st.warning(f"Prompt has {prompt_len} tokens > {max_prompt_len}!!!")
-
-		### Other Settings
 		n = st.number_input("n", min_value=1, value=config["n"], step=1, format="%i", key="n",
 			help="How many pictures to generate?")
 		width = st.number_input("width", min_value=64, value=config["width"], step=64, format="%i", key="width")
@@ -58,6 +48,9 @@ def render():
 
 
 	# Work area
+	## Prompt
+	prompt = make_prompt_area(config["prompt"])
+
 	## Button to draw
 	do_draw = st.button(
 		label="Draw",
