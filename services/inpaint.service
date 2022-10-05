@@ -1,0 +1,6 @@
+[Unit]
+Description=Stable Diffusion
+After=network.target nss-lookup.target
+
+[Service]
+ExecStart=bash /root/inpaint/launch.bash
