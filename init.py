@@ -6,7 +6,5 @@ os.chdir(root_dir)
 
 import pathlib
 
-pathlib.Path("./.streamlit").mkdir(parents=True, exist_ok=True)
-pathlib.Path("./config").mkdir(parents=True, exist_ok=True)
 pathlib.Path("./model_cache").mkdir(parents=True, exist_ok=True)
 pathlib.Path("./out").mkdir(parents=True, exist_ok=True)
