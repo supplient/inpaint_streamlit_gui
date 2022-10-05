@@ -2,10 +2,16 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import json
 import hashlib
+import os
+import os.path
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 from random_filename import random_filename
+
+# Change work dir
+root_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(root_dir)
 
 # Gloabl Page Config
 st.set_page_config(page_title="Inpaint", layout="wide")
@@ -25,9 +31,9 @@ def LoadConfig(config_filepath):
 		configs = json.load(f)
 	config = configs[0]
 	return config
-st.session_state.setdefault("config", LoadConfig(r".\config\inpaint.json"))
+st.session_state.setdefault("config", LoadConfig("./config/inpaint.json"))
 with st.sidebar.expander("Server", expanded=False):
-	config_filepath = st.text_input("config_filepath", value=r".\config\inpaint.json",
+	config_filepath = st.text_input("config_filepath", value="./config/inpaint.json",
 		help="The config file's path on server.")
 	do_load_config = st.button("Load Config")
 	if do_load_config:
@@ -256,7 +262,6 @@ for i in range(len(sel_btns)):
 		img = res_images[i]
 
 		# Save concerned common
-		import os.path
 		filename:str = random_filename()
 
 		# Save metadata

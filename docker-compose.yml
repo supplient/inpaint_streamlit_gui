@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  inpaint:
+    build: .
+    entrypoint: bash /inpaint/launch.bash
+    runtime: nvidia
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/inpaint
