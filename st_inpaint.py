@@ -21,59 +21,66 @@ def InitSetting(config_filepath):
 		configs = json.load(f)
 	config = configs[0]
 	return config
-config_filepath = r"E:\code_concerned\ai\waifu-diffusion\code\config\inpaint.json"
+config_filepath = r".\config\inpaint.json"
 config = InitSetting(config_filepath)
 
 # Sidebar
 ## Input
-with st.sidebar.form(key="upload_file_form", clear_on_submit=True):
-	upload_image = st.file_uploader("init_image", type=["png", "jpg", "bmp"], key="upload_image_uploader")
-	submitted = st.form_submit_button("Submit")
-	if submitted:
-		st.session_state["sel_image"] = None
-		st.session_state["upload_image"] = upload_image
-clear_canvas = st.sidebar.button("clear_canvas")
-all_mask = st.sidebar.checkbox("all_mask", value=False, 
-	help="If true, all the picture will be inpainted. i.e. become img2img")
+with st.sidebar.expander("Input", expanded=True):
+	clear_canvas = st.button("clear_canvas")
+	with st.form(key="upload_init_image_form", clear_on_submit=True):
+		upload_image = st.file_uploader("init_image", type=["png", "jpg", "bmp"], key="upload_init_image_uploader")
+		submitted = st.form_submit_button("Submit")
+		if submitted:
+			st.session_state["sel_image"] = None
+			st.session_state["upload_image"] = upload_image
+	init_mask_json = st.file_uploader("mask_json", type=["json"], key="upload_mask_json_uploader")
 
-if clear_canvas:
-	st.session_state["sel_image"] = None
-	st.session_state["upload_image"] = None
+	if clear_canvas:
+		st.session_state["sel_image"] = None
+		st.session_state["upload_image"] = None
 
 ## Tool settings
-stroke_width = st.sidebar.slider("stroke_width", min_value=1, max_value=100, value=30, step=1, key="stroke_width")
-col_per_row = st.sidebar.number_input("col_per_row", min_value=1, value=3, step=1, format="%i", key="col_per_row",
-	help="How many pictures are shown in the result row?")
+with st.sidebar.expander("Tool", expanded=True):
+	all_mask = st.checkbox("all_mask", value=False, 
+		help="If true, all the picture will be inpainted. i.e. become img2img")
+	stroke_width = st.slider("stroke_width", min_value=1, max_value=100, value=30, step=1, key="stroke_width")
+	stroke_color = st.radio("stroke_color", options=["white", "black"], index=0, horizontal=True,
+		help="White: mask this.  Black: unmask this.  Only the masked part will be inpainted.")
+	col_per_row = st.number_input("col_per_row", min_value=1, value=3, step=1, format="%i", key="col_per_row",
+		help="How many pictures are shown in the result row?")
 
 ## Inpaint Settings
-### Prompt Setting
-prompt = st.sidebar.text_area("prompt", value=config["prompt"], key="prompt",
-	help="Prompt to guide AI.")
 @st.experimental_singleton
 def get_check_prompt_func():
 	from check_prompt import check_prompt_length
 	return check_prompt_length
-isvalid, prompt_len, max_prompt_len = get_check_prompt_func()(prompt)
-if isvalid:
-	st.sidebar.success(f"Prompt has {prompt_len} tokens <= {max_prompt_len}.")
-else:
-	st.sidebar.warning(f"Prompt has {prompt_len} tokens > {max_prompt_len}!!!")
 
-### Other Settings
-n = st.sidebar.number_input("n", min_value=1, value=config["n"], step=1, format="%i", key="n",
-	help="How many pictures to generate?")
-if all_mask:
-	keep_origin = False
-else:
-	keep_origin = st.sidebar.checkbox("keep_origin", value=config["keep_origin"], key="keep_origin",
-		help="If False, the unmasked part will also be modified. Though the change is small, it may be significant after multiple iterations.")
-strength = st.sidebar.slider("strength", min_value=0.0, max_value=1.0, value=config["strength"], step=0.05, key="strength",
-	help="Repaint strength.")
-num_inference_steps = st.sidebar.slider("num_inference_steps", min_value=0, max_value=100, value=config["num_inference_steps"], step=5, format="%i", key="num_inference_steps")
-guidance_scale = st.sidebar.slider("guidance_scale", min_value=1.0, max_value=50.0, value=config["guidance_scale"], step=0.5, format="%f", key="guidance_scale")
-eta = st.sidebar.slider("eta", min_value=0.0, max_value=1.0, value=config["eta"], step=0.05, key="eta")
-seed = st.sidebar.number_input("seed", min_value=0, value=0 if config["seed"] is None else config["seed"], step=1, format="%i", key="seed", 
-	help="0 means to use random seed.")
+with st.sidebar.expander("Inpaint", expanded=True):
+	### Prompt Setting
+	prompt = st.text_area("prompt", value=config["prompt"], key="prompt",
+		help="Prompt to guide AI.")
+	isvalid, prompt_len, max_prompt_len = get_check_prompt_func()(prompt)
+	if isvalid:
+		st.success(f"Prompt has {prompt_len} tokens <= {max_prompt_len}.")
+	else:
+		st.warning(f"Prompt has {prompt_len} tokens > {max_prompt_len}!!!")
+
+	### Other Settings
+	n = st.number_input("n", min_value=1, value=config["n"], step=1, format="%i", key="n",
+		help="How many pictures to generate?")
+	if all_mask:
+		keep_origin = False
+	else:
+		keep_origin = st.checkbox("keep_origin", value=config["keep_origin"], key="keep_origin",
+			help="If False, the unmasked part will also be modified. Though the change is small, it may be significant after multiple iterations.")
+	strength = st.slider("strength", min_value=0.0, max_value=1.0, value=config["strength"], step=0.05, key="strength",
+		help="Repaint strength.")
+	num_inference_steps = st.slider("num_inference_steps", min_value=0, max_value=100, value=config["num_inference_steps"], step=5, format="%i", key="num_inference_steps")
+	guidance_scale = st.slider("guidance_scale", min_value=1.0, max_value=50.0, value=config["guidance_scale"], step=0.5, format="%f", key="guidance_scale")
+	eta = st.slider("eta", min_value=0.0, max_value=1.0, value=config["eta"], step=0.05, key="eta")
+	seed = st.number_input("seed", min_value=0, value=0 if config["seed"] is None else config["seed"], step=1, format="%i", key="seed", 
+		help="0 means to use random seed.")
 
 
 # Work area
@@ -86,6 +93,11 @@ if sel_image:
 elif upload_image:
 	init_image = Image.open(upload_image)
 
+if init_mask_json is None:
+	init_mask_json = {}
+else:
+	init_mask_json = json.load(init_mask_json)
+
 ## use image's hash to enforce the canvas to re-render
 ## see https://github.com/andfanilo/streamlit-drawable-canvas/issues/73
 init_image_hash = hashlib.sha256(init_image.tobytes()).hexdigest() if init_image else "sadjfiojeio"
@@ -93,12 +105,13 @@ init_image_hash = hashlib.sha256(init_image.tobytes()).hexdigest() if init_image
 canvas_result = st_canvas(
     fill_color="rgba(0, 0, 0, 0)",  # Fixed fill color with some opacity
     stroke_width=stroke_width,
-    stroke_color="white",
+    stroke_color=stroke_color,
     background_image=init_image,
 	background_color="rgba(0, 0, 0, 255)",
     update_streamlit=True,
     width=512 if init_image is None else init_image.size[0],
     height=512 if init_image is None else init_image.size[1],
+	initial_drawing=init_mask_json,
     drawing_mode="freedraw",
 	display_toolbar=True,
     key="canvas" + init_image_hash,
@@ -110,7 +123,7 @@ if not canvas_result.image_data is None:
 	mask_image = Image.fromarray(mask_image, mode="RGBA")
 	mask_image = mask_image.convert("RGB")
 
-work_btn_cols = st.columns(3)
+work_btn_cols = st.columns(4)
 with work_btn_cols[0]:
 	do_inpaint = st.button(
 		label="Inpaint",
@@ -135,11 +148,20 @@ with work_btn_cols[2]:
 		mask_image.save(mask_image_buf, format="png")
 		mask_image_buf_im = mask_image_buf.getvalue()
 	st.download_button(
-		label="Download mask",
+		label="Download mask image",
 		data=mask_image_buf_im,
-		file_name=random_filename()+".png",
+		file_name=random_filename()+".mask.png",
 		mime="image/png",
 		disabled=mask_image is None,
+	)
+with work_btn_cols[3]:
+	json_str = json.dumps(canvas_result.json_data) if canvas_result.json_data else ""
+	st.download_button(
+		label="Download mask json",
+		data= json_str,
+		file_name=random_filename()+".mask.json",
+		mime="application/json",
+		disabled=canvas_result.json_data is None,
 	)
 
 
