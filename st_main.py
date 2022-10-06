@@ -1,7 +1,11 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
+
 # Set root dir
-st.session_state["root_dir"] = "/root/inpaint"
+import os
+import os.path
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+st.session_state["root_dir"] = "."
 
 from pydoc import getpager
 import json

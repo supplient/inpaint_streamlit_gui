@@ -6,5 +6,8 @@ import os.path
 
 import pathlib
 
-pathlib.Path("/root/inpaint/model_cache").mkdir(parents=True, exist_ok=True)
-pathlib.Path("/root/inpaint/out").mkdir(parents=True, exist_ok=True)
+import os
+import os.path
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+pathlib.Path("./model_cache").mkdir(parents=True, exist_ok=True)
+pathlib.Path("./out").mkdir(parents=True, exist_ok=True)
