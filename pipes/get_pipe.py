@@ -9,7 +9,7 @@ model_id = "hakurei/waifu-diffusion"
 device = "cuda"
 
 import os.path
-model_cache_dir = os.path.join(st.session_state["root_dir"], "model_cache")
+model_cache_dir = "./model_cache"
 
 pipe = StableDiffusionPipeline.from_pretrained(
     model_id,

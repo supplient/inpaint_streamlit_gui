@@ -30,8 +30,6 @@ def render():
 	with st.sidebar.expander("Tool", expanded=True):
 		col_per_row = st.number_input("col_per_row", min_value=1, value=3, step=1, format="%i", key="col_per_row",
 			help="How many pictures are shown in the result row?")
-		save_metadata = st.checkbox("save_metadata", value=True,
-			help="If True, a json file containing the config when generating the image will be saved, with .meta.json extension.")
 		show_result = st.checkbox("show_result", value=False,
 			help="If True, all generated images will shown.")
 
@@ -109,8 +107,7 @@ def render():
 		zip_bytes_io = io.BytesIO()
 		with ZipFile(zip_bytes_io, "w") as zip_file:
 			# metadata
-			if save_metadata:
-				zip_file.writestr(f"{random_filename()}.meta.json", json.dumps(metadata, indent=4))
+			zip_file.writestr(f"{random_filename()}.meta.json", json.dumps(metadata, indent=4))
 
 			# imgs
 			for i in range(len(images)):

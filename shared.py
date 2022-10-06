@@ -17,22 +17,32 @@ def get_check_prompt_func():
 	from check_prompt import check_prompt_length
 	return check_prompt_length
 
-def make_image_download_btn(image, label, filename):
+def img2bytes(image):
 	# we have to convert PIL.Image to BytesIO for downloading.
 	# see https://discuss.streamlit.io/t/how-to-download-image/3358/10
 	from io import BytesIO
+	image_buf = BytesIO()
+	image.save(image_buf, format="png")
+	return image_buf.getvalue()
 
-	image_buf_im = ""
-	if image:
-		image_buf = BytesIO()
-		image.save(image_buf, format="png")
-		image_buf_im = image_buf.getvalue()
+def zip_bytes_or_strs(filenames, bytes_or_strs) -> bytes:
+	assert(len(filenames) == len(bytes_or_strs))
+	from zipfile import ZipFile
+	import io
+	zip_bytes_io = io.BytesIO()
+	with ZipFile(zip_bytes_io, "w") as zip_file:
+		for i in range(len(bytes_or_strs)):
+			zip_file.writestr(filenames[i], bytes_or_strs[i])
+	return zip_bytes_io.getvalue()
+
+def make_image_download_btn(image, label, filename, key=None):
 	return st.download_button(
 		label=label,
-		data=image_buf_im,
+		data=img2bytes(image) if image else "",
 		file_name=filename,
 		mime="image/png",
 		disabled=image is None,
+		key=key if key else label,
 	)
 
 def make_prompt_area(default_prompt):
