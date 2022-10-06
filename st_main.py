@@ -7,6 +7,10 @@ import os.path
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 st.session_state["root_dir"] = "."
 
+# Add diffusers to path
+import sys
+sys.path.insert(0, os.path.abspath("./diffusers/src"))
+
 from pydoc import getpager
 import json
 import hashlib
