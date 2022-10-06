@@ -6,6 +6,8 @@
 ``` bash
 mkdir /root/inpaint
 git clone https://github.com/supplient/inpaint_streamlit_gui.git /root/inpaint
+pip install /root/inpaint/requirements.txt
+# Copy model to model_cache
 bash /root/inpaint/install.bash
 ```
 

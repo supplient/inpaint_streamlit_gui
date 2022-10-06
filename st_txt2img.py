@@ -11,12 +11,13 @@ from io import BytesIO
 from shared import load_config, make_prompt_area, random_filename
 import torch
 
+default_configfile_path = os.path.join(st.session_state["root_dir"], "config/txt2img.json")
 
 def render():
 	## Server
-	st.session_state.setdefault("config", load_config("./config/txt2img.json"))
+	st.session_state.setdefault("config", load_config(default_configfile_path))
 	with st.sidebar.expander("Server", expanded=False):
-		config_filepath = st.text_input("config_filepath", value="./config/txt2img.json",
+		config_filepath = st.text_input("config_filepath", value=default_configfile_path,
 			help="The config file's path on server.")
 		do_load_config = st.button("Load Config")
 		if do_load_config:

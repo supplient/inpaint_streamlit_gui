@@ -10,18 +10,21 @@ from io import BytesIO
 from shared import random_filename, load_config, make_prompt_area, make_image_download_btn
 import torch
 
+default_configfile_path = os.path.join(st.session_state["root_dir"], "config/inpaint.json")
+default_out_path = os.path.join(st.session_state["root_dir"], "out")
+
 def render():
 	## Server
-	st.session_state.setdefault("config", load_config("./config/inpaint.json"))
+	st.session_state.setdefault("config", load_config(default_configfile_path))
 	with st.sidebar.expander("Server", expanded=False):
-		config_filepath = st.text_input("config_filepath", value="./config/inpaint.json",
+		config_filepath = st.text_input("config_filepath", value=default_configfile_path,
 			help="The config file's path on server.")
 		do_load_config = st.button("Load Config")
 		if do_load_config:
 			st.session_state["config"] = load_config(config_filepath)
 			st.info("Config loaded.")
 
-		st.session_state["out_dir"] = st.text_input("out_dir", value="./out", key="out_dir_input",
+		st.session_state["out_dir"] = st.text_input("out_dir", value=default_out_path, key="out_dir_input",
 			help="The directory address on server to save selected pictures.") 
 		save_on_select_server = st.checkbox("save_on_select_server", value=False,
 			help="If True, image will be saved in `out_dir` when `Select` button is pressed.")

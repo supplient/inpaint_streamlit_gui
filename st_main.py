@@ -1,6 +1,9 @@
-from pydoc import getpager
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
+# Set root dir
+st.session_state["root_dir"] = "/root/inpaint"
+
+from pydoc import getpager
 import json
 import hashlib
 import os
@@ -9,10 +12,6 @@ from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 from shared import random_filename
-
-# Change work dir
-root_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(root_dir)
 
 # Gloabl Page Config
 st.set_page_config(page_title="Inpaint", layout="wide")
